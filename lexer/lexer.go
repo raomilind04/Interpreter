@@ -33,14 +33,40 @@ func (lexer *Lexer) NextToken() token.Token {
     lexer.skipWhiteSpaces()
 
     switch lexer.character {
-    case '=':
-        tok = newToken(token.ASSIGN, lexer.character)
     case ';':
         tok = newToken(token.SEMICOLON, lexer.character)
     case ',':
         tok = newToken(token.COMMA, lexer.character)
+    case '!':
+        if lexer.peekChar() == '=' {
+            ch := lexer.character
+            lexer.readChar()
+            tok = token.Token{
+                Type:     token.NOT_EQ,
+                Literal:  string(ch) + string(lexer.character),
+            }
+        } else {
+            tok = newToken(token.BANG, lexer.character)
+        }
+    case '=':
+        if lexer.peekChar() == '=' {
+            ch := lexer.character
+            lexer.readChar()
+            tok = token.Token {
+                Type:     token.EQ,
+                Literal:  string(ch) + string(lexer.character),
+            }
+        } else {
+            tok = newToken(token.ASSIGN, lexer.character)
+        }
     case '+':
         tok = newToken(token.PLUS, lexer.character)
+    case '-':
+        tok = newToken(token.MINUS, lexer.character)
+    case '/':
+        tok = newToken(token.SLASH, lexer.character)
+    case '*':
+        tok = newToken(token.ASTERISK, lexer.character)
     case '(':
         tok = newToken(token.LPAREN, lexer.character)
     case ')':
@@ -49,6 +75,10 @@ func (lexer *Lexer) NextToken() token.Token {
         tok = newToken(token.LBRACE, lexer.character)
     case '}':
         tok = newToken(token.RBRACE, lexer.character)
+    case '>':
+        tok = newToken(token.GT, lexer.character)
+    case '<':
+        tok = newToken(token.LT, lexer.character)
     case 0:
         tok.Literal = ""
         tok.Type = token.EOF
@@ -105,4 +135,12 @@ func (lexer *Lexer) readNumber() string {
 
 func isDigit(character byte) bool {
     return '0' <= character && '9' >= character
+}
+
+func (lexer *Lexer) peekChar() byte {
+    if lexer.readPosition >= len(lexer.input) {
+        return 0
+    } else {
+        return lexer.input[lexer.readPosition]
+    }
 }
