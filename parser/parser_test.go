@@ -1,7 +1,6 @@
 package parser
 
 import (
-	"fmt"
 	"interpreter/ast"
 	"interpreter/lexer"
 	"testing"
@@ -13,8 +12,6 @@ func TestLetStatements(t *testing.T) {
     let y = 10;
     let foobar = 8080;
     `
-    fmt.Print(input)
-
     lexer := lexer.New(input)
     parser := New(lexer)
 
@@ -46,7 +43,6 @@ func TestLetStatements(t *testing.T) {
 }
 
 func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
-    fmt.Print("testLetStatement")
     if s.TokenLiteral() != "let" {
         t.Errorf("statement.TokenLiteral is not let, got: %q", s.TokenLiteral())
         return false
@@ -71,7 +67,6 @@ func testLetStatement(t *testing.T, s ast.Statement, name string) bool {
 }
 
 func checkParserErrors(t *testing.T, parser *Parser) {
-    fmt.Print("checkParserErrors")
     errors := parser.Errors()
 
     if len(errors) == 0 {
@@ -83,4 +78,32 @@ func checkParserErrors(t *testing.T, parser *Parser) {
         t.Errorf("parser error: %q", err)
     }
     t.FailNow()
+}
+
+func TestReturnStatements(t *testing.T) {
+    input := `
+    return 5;
+    return 10;
+    return 998877;
+    `
+    lexer := lexer.New(input)
+    parser := New(lexer)
+
+    program := parser.ParseProgram()
+    checkParserErrors(t, parser)
+
+    if len(program.Statements) != 3 {
+        t.Fatalf("program.Statements should have 3 statement but had %d", len(program.Statements))
+    }
+
+    for _, statement := range program.Statements {
+        returnStatement, ok := statement.(*ast.ReturnStatement)
+        if !ok {
+            t.Errorf("statement is not *ast.ReturnStatement, got: %T", statement)
+            continue
+        }
+        if returnStatement.TokenLiteral() != "return" {
+            t.Errorf("returnStatement.TokenLiteral should be 'return but was %q", returnStatement.TokenLiteral())
+        }
+    }
 }
