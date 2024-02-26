@@ -1,11 +1,13 @@
 package ast
 
 import (
-    "interpreter/token"
+	"bytes"
+	"interpreter/token"
 )
 
 type Node interface {
     TokenLiteral() string
+    String() string
 }
 
 type Statement interface {
@@ -30,6 +32,16 @@ func (prog *Program) TokenLiteral() string {
     }
 }
 
+func (prog *Program) String() string {
+    var output bytes.Buffer
+
+    for _, s := range prog.Statements {
+        output.WriteString(s.String())
+    }
+
+    return output.String()
+}
+
 
 // LET statements
 
@@ -42,6 +54,21 @@ type LetStatement struct {
 func (ls *LetStatement) statementNode() {}
 func (ls *LetStatement) TokenLiteral() string {
     return ls.Token.Literal
+}
+func (ls *LetStatement) String() string {
+    var output bytes.Buffer
+
+    output.WriteString(ls.TokenLiteral() + " ")
+    output.WriteString(ls.Name.String)
+    output.WriteString(" = ")
+
+    if ls.Value != nil {
+        output.WriteString(ls.Value.String())
+    }
+
+    output.WriteString(";")
+
+    return output.String()
 }
 
 type Identifier struct {
@@ -67,3 +94,15 @@ func (rs *ReturnStatement) TokenLiteral() string {
     return rs.Token.Literal
 }
 
+
+// Expression Statement
+
+type ExpressionStatement struct {
+    Token       token.Token
+    Expression  Expression
+}
+
+func (es *ExpressionStatement) statementNode()  {}
+func (es *ExpressionStatement) TokenLiteral() string {
+    return es.Token.Literal
+}
