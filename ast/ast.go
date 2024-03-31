@@ -59,7 +59,7 @@ func (ls *LetStatement) String() string {
     var output bytes.Buffer
 
     output.WriteString(ls.TokenLiteral() + " ")
-    output.WriteString(ls.Name.String)
+    output.WriteString(ls.Name.String())
     output.WriteString(" = ")
 
     if ls.Value != nil {
@@ -80,6 +80,9 @@ func (i *Identifier) expressionNode() {}
 func (i *Identifier) TokenLiteral() string {
     return i.Token.Literal
 }
+func (i *Identifier) String() string {
+    return i.Value
+}
 
 
 // Return Statement
@@ -93,7 +96,19 @@ func (rs *ReturnStatement) statementNode() {}
 func (rs *ReturnStatement) TokenLiteral() string {
     return rs.Token.Literal
 }
+func (rs *ReturnStatement) String() string {
+    var output bytes.Buffer
 
+    output.WriteString(rs.TokenLiteral() + " ")
+
+    if rs.ReturnValue != nil {
+        output.WriteString(rs.ReturnValue.String())
+    }
+
+    output.WriteString(";")
+
+    return output.String()
+}
 
 // Expression Statement
 
@@ -105,4 +120,10 @@ type ExpressionStatement struct {
 func (es *ExpressionStatement) statementNode()  {}
 func (es *ExpressionStatement) TokenLiteral() string {
     return es.Token.Literal
+}
+func (es *ExpressionStatement) String() string {
+    if es.Expression != nil {
+        return es.Expression.String()
+    }
+    return ""
 }

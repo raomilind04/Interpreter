@@ -7,6 +7,22 @@ import (
 	"interpreter/token"
 )
 
+const (
+    _ int = iota
+    LOWEST
+    EQUALS
+    LESSGREATER
+    SUM
+    PRODUCT
+    PREFIX
+    CALL
+)
+
+type (
+    prefixParseFn func() ast.Expression
+    infixParseFn  func() ast.Expression
+)
+
 type Parser struct {
     lexer *lexer.Lexer
     
@@ -14,6 +30,9 @@ type Parser struct {
 
     currToken token.Token
     peekToken token.Token
+
+    prefixParseFns map[token.TokenType]prefixParseFn
+    infixParseFns  map[token.TokenType]infixParseFn
 }
 
 func New(lexer *lexer.Lexer) *Parser {
@@ -21,11 +40,26 @@ func New(lexer *lexer.Lexer) *Parser {
         lexer:  lexer,
         errors: []string{},
     }
+    
+    parser.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+    parser.registerPrefix(token.IDENT, parser.parseIdentifier)
 
     parser.nextToken()
     parser.nextToken()
 
     return parser
+}
+
+func (parser *Parser) registerPrefix(tokenType token.TokenType, fn prefixParseFn) {
+    parser.prefixParseFns[tokenType] = fn
+}
+
+func (parser *Parser) registerInfix(tokenType token.TokenType, fn infixParseFn) {
+    parser.infixParseFns[tokenType] = fn 
+}
+
+func (parser *Parser) parseIdentifier() ast.Expression {
+    return &ast.Identifier{Token: parser.currToken, Value: parser.currToken.Literal}
 }
 
 func (parser *Parser) Errors() []string {
@@ -64,7 +98,7 @@ func (parser *Parser) parseStatement() ast.Statement {
     case token.RETURN:
         return parser.parserReturnStatement()
     default:
-        return nil
+        return parser.parseExpressionStatement()
     }
 }
 
@@ -97,6 +131,28 @@ func (parser *Parser) parserReturnStatement() *ast.ReturnStatement {
     }
 
     return statement
+}
+
+func (parser *Parser) parseExpressionStatement() *ast.ExpressionStatement {
+    statement := &ast.ExpressionStatement{Token: parser.currToken}
+
+    statement.Expression = parser.parseExpression(LOWEST)
+
+    if parser.peekTokenIs(token.SEMICOLON) {
+        parser.nextToken()
+    }
+
+    return statement
+}
+
+func (parser *Parser) parseExpression(precedence int) ast.Expression {
+    prefix := parser.prefixParseFns[parser.currToken.Type]
+    if prefix == nil {
+        return nil
+    }
+    leftExp := prefix()
+
+    return leftExp; 
 }
 
 func (parser *Parser) currTokenIs(tokenType token.TokenType) bool {
