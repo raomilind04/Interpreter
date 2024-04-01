@@ -60,6 +60,7 @@ func New(lexer *lexer.Lexer) *Parser {
     parser.registerPrefix(token.MINUS, parser.parsePrefixExpression)
     parser.registerPrefix(token.TRUE, parser.parseBoolean)
     parser.registerPrefix(token.FALSE, parser.parseBoolean)
+    parser.registerPrefix(token.LPAREN, parser.parseGroupedExpression)
 
     parser.infixParseFns = make(map[token.TokenType]infixParseFn)
     parser.registerInfix(token.PLUS, parser.parseInfixExpression)
@@ -263,6 +264,18 @@ func (parser *Parser) expectPeek(tokenType token.TokenType) bool {
         parser.peekError(tokenType)
         return false
     }
+}
+
+func (parser *Parser) parseGroupedExpression() ast.Expression {
+    parser.nextToken()
+
+    expression := parser.parseExpression(LOWEST)
+
+    if !parser.expectPeek(token.RPAREN) {
+        return nil
+    }
+
+    return expression
 }
 
 func (parser *Parser) peekPrecedence() int {
