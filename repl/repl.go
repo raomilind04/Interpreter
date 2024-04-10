@@ -34,7 +34,7 @@ func Start(input io.Reader, output io.Writer) {
         evaluated := evaluator.Eval(program)
         if evaluated != nil {
             io.WriteString(output, evaluated.Inspect())
-            io.WriteString(output, "\n")
+            io.WriteString(output, "")
         }
         // io.WriteString(output, program.String())
         // io.WriteString(output, "\n")
