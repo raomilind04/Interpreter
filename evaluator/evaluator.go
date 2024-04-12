@@ -87,6 +87,10 @@ func evalInflixExpression(operator string, left object.Object, right object.Obje
     switch {
     case left.Type() == object.INTEGER_OBJ && right.Type() == object.INTEGER_OBJ:
         return evalIntegerInflixExpression(operator, left, right)
+    case operator == "==":
+        return nativeBoolToBooleanObject(left == right)
+    case operator == "!=":
+        return nativeBoolToBooleanObject(left != right)
     default:
         return NULL
     }
