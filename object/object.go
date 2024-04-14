@@ -1,6 +1,12 @@
 package object
 
-import "fmt"
+import (
+	"bytes"
+	"fmt"
+	"go/token"
+	"interpreter/ast"
+	"strings"
+)
 
 const (
     INTEGER_OBJ      = "INTEGER"
@@ -8,6 +14,7 @@ const (
     NULL_OBJ         = "NULL"
     RETURN_VALUE_OBJ = "RETURN_VALUE"
     ERROR_OBJ        = "ERROR"
+    FUNCTION_OBJ     = "FUNCTION"
 )
 
 type ObjectType string
@@ -17,6 +24,11 @@ type Object interface {
     Inspect() string
 }
 
+type FunctionLiteral struct {
+    Token      token.Token
+    Parameters []*ast.Identifier
+    Body       *ast.BlockStatement
+}
 
 // INTEGER
 type Integer struct {
@@ -63,7 +75,6 @@ func (rv *ReturnValue) Inspect() string {
 }
 
 // ERROR
-
 type Error struct {
     Message string
 }
@@ -75,20 +86,58 @@ func (e *Error) Inspect() string {
 }
 
 // Environment
-
 func NewEnvironment() *Environment {
     s := make(map[string]Object)
-    return &Environment{store: s}
+    return &Environment{store: s, outer: nil}
+}
+
+func NewEnclosedEnvironment(outer *Environment) *Environment {
+    env := NewEnvironment()
+    env.outer = outer
+    return env
 }
 
 type Environment struct {
     store map[string]Object
+    outer *Environment
 }
 func (e *Environment) Get(name string) (Object, bool) {
     obj, ok := e.store[name]
+    if !ok && e.outer != nil {
+        obj, ok = e.outer.Get(name)
+    }
     return obj, ok
 }
 func (e *Environment) Set(name string, val Object) Object {
     e.store[name] = val
     return val
 }
+
+// Functions
+type Function struct {
+    Parameters  []*ast.Identifier
+    Body        *ast.BlockStatement
+    Env         *Environment
+}
+func (f *Function) Type() ObjectType {
+    return FUNCTION_OBJ
+}
+func (f *Function) Inspect() string {
+    var output bytes.Buffer
+
+    params := []string{}
+    for _, p := range f.Parameters {
+        params = append(params, p.String())
+    }
+    
+    output.WriteString("fn")
+    output.WriteString("(")
+    output.WriteString(strings.Join(params, ","))
+    output.WriteString("){\n")
+    output.WriteString(f.Body.String())
+    output.WriteString("\n}")
+
+    return output.String()
+}
+
+
