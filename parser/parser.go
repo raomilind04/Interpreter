@@ -333,10 +333,15 @@ func (parser *Parser) parseHashLiteral() ast.Expression {
 
         hash.Pairs[key] = value
 
-        if !parser.peekTokenIs(token.LBRACE) && !parser.expectPeek(token.COMMA) {
+        if !parser.peekTokenIs(token.RBRACE) && !parser.expectPeek(token.COMMA) {
             return nil
         }
     }
+
+    if !parser.expectPeek(token.RBRACE) {
+        return nil
+    }
+
     return hash
 }
 

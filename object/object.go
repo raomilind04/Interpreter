@@ -221,7 +221,7 @@ func (a *Array) Inspect() string {
 
 // HashMaps
 type HashPair struct {
-    key   Object
+    Key   Object
     Value Object
 }
 
@@ -236,7 +236,7 @@ func (h *Hash) Inspect() string {
 
     pairs := []string{}
     for _, pair := range h.Pairs {
-        pairs = append(pairs, fmt.Sprintf("%s: %s", pair.key.Inspect(), pair.Value.Inspect()))
+        pairs = append(pairs, fmt.Sprintf("%s: %s", pair.Key.Inspect(), pair.Value.Inspect()))
     }
 
     output.WriteString("{")

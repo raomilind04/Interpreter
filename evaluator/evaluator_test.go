@@ -342,7 +342,7 @@ func TestStringConcatenation(t *testing.T) {
     evaluated := testEval(input)
     str, ok := evaluated.(*object.String)
     if !ok {
-        t.Fatalf("object is not String. got=%T (+%v)", evaluated, evaluated)
+        t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
     }
 
     if str.Value != "Hello World!" {
@@ -371,7 +371,7 @@ func TestBuiltInFunctions(t *testing.T) {
         case string:
             errObj, ok := evaluated.(*object.Error)
             if !ok {
-                t.Errorf("object is not Error. got=%T (+%v)", evaluated, evaluated)
+                t.Errorf("object is not Error. got=%T (%+v)", evaluated, evaluated)
                 continue
             }
             if errObj.Message != expected {
@@ -387,7 +387,7 @@ func TestArrayLiterals(t *testing.T) {
     evaluated := testEval(input)
     result, ok := evaluated.(*object.Array)
     if !ok {
-        t.Fatalf("object is not Array. got=%T (+%v)", evaluated, evaluated)
+        t.Fatalf("object is not Array. got=%T (%+v)", evaluated, evaluated)
     }
 
     if len(result.Elements) != 3 {
@@ -442,5 +442,47 @@ func TestArrayIndexExpressions(t *testing.T) {
         } else {
             testNullObject(t, evaluated)
         }
+    }
+}
+
+func TestHashLiterals(t *testing.T) {
+    input := `
+            let two = "two";
+            {
+                "one": 10 - 9,
+                two: 1 + 1,
+                "thr" + "ee": 6 / 2,
+                4: 4,
+                true: 5,
+                false: 6
+            }
+            `
+
+    evaluated := testEval(input)
+    result, ok := evaluated.(*object.Hash)
+    if !ok {
+        t.Fatalf("Eval did not return Hash. got=%T (%+v)", evaluated, evaluated)
+    }
+
+    expected := map[object.HashKey]int64{
+        (&object.String{Value: "one"}).HashKey():   1,
+        (&object.String{Value: "two"}).HashKey():   2,
+        (&object.String{Value: "three"}).HashKey(): 3,
+        (&object.Integer{Value: 4}).HashKey():      4,
+        TRUE.HashKey():                             5,
+        FALSE.HashKey():                            6,
+    }
+
+    if len(result.Pairs) != len(expected) {
+        t.Fatalf("Hash has wrong num of pairs, got=%d", len(result.Pairs))
+    }
+
+    for expectedKey, expectedValue := range expected {
+        pair, ok := result.Pairs[expectedKey]
+        if !ok {
+            t.Errorf("no pair for given key in Pairs")
+        }
+
+        testIntegerObject(t, pair.Value, expectedValue)
     }
 }
