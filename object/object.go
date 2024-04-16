@@ -6,6 +6,7 @@ import (
 	"go/token"
 	"interpreter/ast"
 	"strings"
+    "hash/fnv"
 )
 
 const (
@@ -18,6 +19,7 @@ const (
     STRING_OBJ       = "STRING"
     BUILTIN_OBJ      = "BUILTIN"
     ARRAY_OBJ        = "ARRAY"
+    HASH_OBJ         = "HASH"
 )
 
 type ObjectType string
@@ -35,6 +37,14 @@ type FunctionLiteral struct {
 
 type BuiltinFunction func(args ...Object) Object
 
+type HashKey struct {
+    Type  ObjectType
+    Value uint64
+}
+
+type Hashable interface {
+    HashKey() HashKey
+}
 
 // INTEGER
 type Integer struct {
@@ -45,6 +55,9 @@ func (i *Integer) Type() ObjectType {
 }
 func (i *Integer) Inspect() string {
     return fmt.Sprintf("%d", i.Value)
+}
+func (i *Integer) HashKey() HashKey {
+    return HashKey{Type: i.Type(), Value: uint64(i.Value)}
 }
 
 
@@ -57,6 +70,17 @@ func (b *Boolean) Type() ObjectType {
 }
 func (b *Boolean) Inspect() string {
     return fmt.Sprintf("%t", b.Value)       
+}
+func (b *Boolean) HashKey() HashKey {
+    var value uint64
+
+    if b.Value {
+        value = 1
+    } else {
+        value = 0
+    }
+
+    return HashKey{Type: b.Type(), Value: value}
 }
 
 
@@ -156,7 +180,13 @@ func (s *String) Type() ObjectType {
 func (s *String) Inspect() string {
     return s.Value
 }
+func (s *String) HashKey() HashKey {
+    h := fnv.New64()
+    h.Write([]byte(s.Value))
+    return HashKey{Type: s.Type(), Value: h.Sum64()}
+}
 
+// Builtin
 type Builtin struct {
     Fn BuiltinFunction 
 }
@@ -186,5 +216,32 @@ func (a *Array) Inspect() string {
     output.WriteString(strings.Join(elements, ", "))
     output.WriteString("]")
 
+    return output.String()
+}
+
+// HashMaps
+type HashPair struct {
+    key   Object
+    Value Object
+}
+
+type Hash struct {
+    Pairs map[HashKey] HashPair
+}
+func (h *Hash) Type() ObjectType {
+    return HASH_OBJ
+}
+func (h *Hash) Inspect() string {
+    var output bytes.Buffer
+
+    pairs := []string{}
+    for _, pair := range h.Pairs {
+        pairs = append(pairs, fmt.Sprintf("%s: %s", pair.key.Inspect(), pair.Value.Inspect()))
+    }
+
+    output.WriteString("{")
+    output.WriteString(strings.Join(pairs, ", "))
+    output.WriteString("}")
+    
     return output.String()
 }
